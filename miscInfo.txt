@@ -1,0 +1,5 @@
+Kerbin radius : 600 km
+Duna radius : 320 km
+Jool radius : 6000 km
+Eve radius : 700 km
+Kerbol radius :  261600 km
