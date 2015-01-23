@@ -23,22 +23,34 @@ for row in csvDict :
 	idx += 1
 csvFile.close()
 
+#Easy accessor to a planet object with name
+def fetchBody(name) :
+	planet = filter(lambda b : b.name == name, planets)
+	if planet :
+		return planet[0]
+	else :
+		return  None
+
 
 #Parse arguments
 parser = argparse.ArgumentParser()
-#parser.add_argument("start", help="Starting celestial body")
-#parser.add_argument("dest", help="Destination body")
-parser.add_argument("-s", "--startRadius", help="Current radius of spacecraft orbit in kilometers")
-parser.add_argument("-d", "--destRadius", help="Radius of destination when orbit is eccentric ...")
-parser.add_argument("-i", "--info", help="Display information of mentionned planet")
+parser.add_argument("start", help="Starting celestial body")
+parser.add_argument("-s", "--startRadius", help="Current radius of spacecraft orbit in kilometers or body name. -d option is mandatory.")
+parser.add_argument("-d", "--destRadius", help="Wanted radius of spacecraft or body name. -s option is mandatory.")
+parser.add_argument("-p", "--planetary", help="Compute interplanetary path from start to mentionned planet. Incompatible with -s and -d")
+parser.add_argument("-i", "--info", help="Display information of planet", action="store_true")
 parser.add_argument("-t", "--time", help="Current time in game, in seconds")
 args = parser.parse_args()
 
 
+#Fetch the main planet
+planet = fetchBody(args.start)
+if not planet:
+	print "Could not find planet " + args.start
+	sys.exit() 
 
 #Print info/debug
 if args.info :
-	planet = filter(lambda b : b.name == args.info, planets)[0]
 	print planet
 	T=planet.period
 	if args.time:
@@ -48,9 +60,25 @@ if args.info :
 	print "Eccentric anomaly is ", math.degrees(planet.getEccentricAnomaly(T))
 	sys.exit()
 
+#Check argument validity
+if args.startRadius != args.destRadius :
+	print "-s option only works with a corresponding -d"
+	sys.exit()
 
+#Handle orbit transfer around the same body 
+if args.startRadius:
+	print "Not supported for now"
+	sys.exit()
 
-
+#Handle interplanetary transfers
+if args.planetary:
+	dest = fetchBody(args.planetary)
+	if not dest:
+		print "Could not find planet " + args.planetary
+	angle = planet.getPhaseAngleForTransferTo(dest)	
+	print "Angle phase from %s to %s is %.1f degrees" % (planet.name, dest.name, math.degrees(angle))
+	
+	
 
 ##Following calculus to retrieve 'navball angle' lambda was found here :
 ##https://docs.google.com/document/d/1IX6ykVb0xifBrB4BRFDpqPO6kjYiLvOcEo3zwmZL0sQ/edit?pli=1

@@ -15,7 +15,8 @@ argumentPeriHeader = 'Argument_of_periapsis'
 class Orbit:
 	
 	#Hohmann transfer time
-	def getTransferTime(start, dest, mu):
+	@classmethod
+	def getTransferTime(cls, start, dest, mu):
 		transferSma = 0.5*(start + dest)
 		transferTime = math.pi * math.sqrt(math.pow(transferSma,3) / mu)
 		return transferTime
@@ -66,6 +67,8 @@ class Body:
 	def getTransferTimeTo(self, dest):
 		return Orbit.getTransferTime(self.sma, dest.sma, self.parentMu)
 
+	def getPhaseAngleForTransferTo(self, dest):
+		return math.pi - (2*math.pi * self.getTransferTimeTo(dest) / dest.period)
 
 	def getPhaseAngleWith(self, dest, t):
 		a = self.getTotalPhase(t)
@@ -78,7 +81,7 @@ class Body:
 	
 	def getHohmannOpportunityAfter(self, dest, t):
 		currentAngle = self.getPhaseAngleWith(dest, t)
-		desiredAngle = math.pi - (2*math.pi * self.getTransferTimeTo(dest) / dest.period)
+		desiredAngle = self.getPhaseAngleForTransferTo(dest)
 		waitTime = (desiredAngle - currentAngle)/self.getSynodicPeriod(dest)
 		return (t+waitTime)
 
