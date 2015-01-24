@@ -2,6 +2,7 @@ import math
 import re
 import sympy
 
+from utils import *
 
 nameHeader = 'Celestial Body (Reference code)'
 parentHeader = 'Parent Body Reference Code'
@@ -11,65 +12,6 @@ anomalyHeader = 'Mean_anomaly'
 eccentricityHeader = 'Orbital_eccentricity'
 ascendingNodeHeader = 'Longitude_of_the_ascending_node'
 argumentPeriHeader = 'Argument_of_periapsis'
-
-class Utility:
-	
-	#Hohmann transfer time
-	@classmethod
-	def getTransferTime(cls, start, dest, mu):
-		transferSma = 0.5*(start + dest)
-		transferTime = math.pi * math.sqrt(math.pow(transferSma,3) / mu)
-		return transferTime
-
-	@classmethod
-	def clipAngle(cls, angle):
-		while angle < 0:
-			angle += 2*math.pi
-		while angle >= 2*math.pi:
-			angle -= 2*math.pi
-		return angle
-	
-
-class Time:
-	def __init__(self, seconds):
-		self.total = seconds
-		self.compute()
-	
-	@classmethod
-	def parse(cls, string):
-		m = re.search("^(?P<years>\d*):(?P<days>\d*)", string)
-		if m :
-			years = int(m.group('years'))-1
-			days = int(m.group('days'))-1
-			total = (years*426 + days) * 3600 * 6
-			return cls(total)
-		return None
-
-	def __str__(self):
-		return "Y %d, D %d, %d:%d:%d" % (self.years, self.days, self.hours, self.minutes, self.seconds)
-
-	def compute(self):
-		#6 hours days, 426 days per year
-		total = self.total
-		self.years = total // (3600 * 6 * 426)
-		total -= self.years * (3600 * 6 * 426)
-		self.days = total // (3600*6)
-		total -= self.days * (3600*6)
-		self.hours = total // 3600
-		total -= self.hours*3600
-		self.minutes = total //60
-		total -= self.minutes*60
-		self.seconds = total
-		#Time 0 corresponds to year 1, day 1 :
-		self.years += 1
-		self.days += 1
-
-	def add(self, seconds):
-		self.total += seconds
-		self.compute()
-
-
-	
 
 class Body:
 	def __init__(self, descr):
