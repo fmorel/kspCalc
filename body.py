@@ -1,6 +1,5 @@
 import math
 import re
-import sympy
 
 from utils import *
 
@@ -41,23 +40,17 @@ class Body:
 		total = self.meanAnomaly + t*(2.0*math.pi/self.period)
 		return Utility.clipAngle(total)
 
-	#Retrieve eccentric anomaly at given time with Kepler equation
-	def getEccentricAnomaly(self, t):
+	def getTrueAnomaly(self, t):
 		M = self.getMeanAnomaly(t)
 		e = self.ecc
-		E = sympy.Symbol('E')
-		#The mean anomaly is a good approximation to start the numeric solver as long as eccentricity is small
-		eccAnomaly = sympy.nsolve(E - e * sympy.sin(E) - M, E, M)
-		return eccAnomaly
-
-	def getTrueAnomalyApprox(self, t):
-		M = self.getMeanAnomaly(t)
-		e = self.ecc
-		return (M + 2*e*math.sin(M) + 1.25*e*e*math.sin(2.0*M))
+		ecube = e*e*e
+		#Series expansion of true anomaly,found here : http://www.jgiesen.de/kepler/kepler1.html
+		#We go up to  the fourth order in e, sufficient for e up to 0.2. Accuracy still acceptable (1° error) for e up to 0.5
+		return (M + (2*e - 0.25*ecube) * math.sin(M) + (1.25*e*e -(11/24)*ecube*e) * math.sin(2.0*M) + (13/12)*ecube * math.sin(3*M))
 	
 	def getTotalPhase(self,t):
 		#Assume non eccentric and non inclined orbits
-		#return self.getTrueAnomalyApprox(t) + self.ascendingNode + self.argumentOfPeriapsis
+		#return self.getTrueAnomaly(t) + self.ascendingNode + self.argumentOfPeriapsis
 		return self.getMeanAnomaly(t) + self.ascendingNode + self.argumentOfPeriapsis
 
 	def getTransferTimeTo(self, dest):
