@@ -45,9 +45,14 @@ class Body:
 		e = self.ecc
 		ecube = e*e*e
 		#Series expansion of true anomaly,found here : http://www.jgiesen.de/kepler/kepler1.html
-		#We go up to  the fourth order in e, sufficient for e up to 0.2. Accuracy still acceptable (1° error) for e up to 0.5
+		#We go up to  the fourth order in e, sufficient for e up to 0.2. Accuracy still acceptable (1deg error) for e up to 0.5
 		return (M + (2*e - 0.25*ecube) * math.sin(M) + (1.25*e*e -(11/24)*ecube*e) * math.sin(2.0*M) + (13/12)*ecube * math.sin(3*M))
-	
+
+	def getRadius(self, nu):
+		e = self.ecc
+		radius = self.sma * (1 - e*e) / (1 + e*math.cos(nu))
+		return radius
+		
 	def getTotalPhase(self,t):
 		#Assume non eccentric and non inclined orbits
 		#return self.getTrueAnomaly(t) + self.ascendingNode + self.argumentOfPeriapsis
@@ -68,7 +73,7 @@ class Body:
 	def getSynodicPeriod(self, dest):
 		return (1.0/(1.0/dest.period - 1.0/self.period))
 
-	
+	#Compute the opportunity for perfect circular orbits
 	def getHohmannOpportunityAfter(self, dest, t):
 		currentAngle = self.getPhaseAngleWith(dest, t)
 		desiredAngle = self.getPhaseAngleForTransferTo(dest)
@@ -83,9 +88,39 @@ class Body:
 			waitTime = (travelAngle - 2*math.pi) * synodic
 		
 		return (t+waitTime)
+	
+	def getHohmannOpportunityAccurate(self, dest, t):
+		#First guess  is the circular opportunity
+		estim = self.getHohmannOpportunityAfter(dest, t)
+		loop=0
+		while True :
+			#Compute the exact position of bodies at estimate
+			nus = self.getTrueAnomaly(estim)
+			rs = self.getRadius(nus)
+			#For destination body, add 180 deg because it is the destination of Hohmann tranfer
+			nud = nus + self.ascendingNode + self.argumentOfPeriapsis +  math.pi \
+				  - dest.ascendingNode - dest.argumentOfPeriapsis 
+			rd = dest.getRadius(nud)
+			
+			#Compute the exact position of destination body after transfer and compare :
+			#If it is ahead, diff is negative
 
-		
+			transferTime = Utility.getTransferTime(rs, rd, self.parentMu)
+			diff = nud - dest.getTrueAnomaly(estim + transferTime)
+			#Better choose algebric angles here
+			diff = Utility.clipAngle(diff)
+			if (diff > math.pi):
+				diff -= 2*math.pi
+			#And the correction depends if target planet is in inferior conjunction	
+			sign = math.copysign(1, self.getSynodicPeriod(dest))
+			#estim += math.copysign(diff / (2*math.pi) * self.period, syn)
+			estim += sign * diff / (2*math.pi) * min(self.period , dest.period)
 
+			loop += 1
+			print math.degrees(diff)
+			if (math.fabs(math.degrees(diff))<0.25) or (loop >= 10):
+				break
 
+		return estim
 
 

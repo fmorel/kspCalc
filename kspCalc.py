@@ -32,6 +32,14 @@ def fetchBody(name) :
 	else :
 		return  None
 
+def parseTime(time) :
+	T = Time.parse(time)
+	if not T :
+		T=int(time)
+	else:
+		T = T.total
+	return T
+
 
 #Parse arguments
 parser = argparse.ArgumentParser()
@@ -55,11 +63,11 @@ if args.info :
 	print planet
 	T=planet.period
 	if args.time:
-		T=int(args.time)
+		T=parseTime(args.time)
 	T = Time(T)
 	print "After T=", T
 	print "Mean anomaly is ", math.degrees(planet.getMeanAnomaly(T.total))
-	print "Eccentric anomaly is ", math.degrees(planet.getEccentricAnomaly(T.total))
+	print "True anomaly is ", math.degrees(planet.getTrueAnomaly(T.total))
 	sys.exit()
 
 #Check argument validity
@@ -87,6 +95,7 @@ if args.planetary:
 			T = T.total
 		print "Current phase angle is %.1f degrees" % math.degrees(Utility.clipAngle(planet.getPhaseAngleWith(dest, T)))
 		print "Next Hohmann opportunity (quick) is at "  + str(Time(planet.getHohmannOpportunityAfter(dest, T)))
+		print "Next Hohmann opportunity (complex) is at "  + str(Time(planet.getHohmannOpportunityAccurate(dest, T)))
 
 	
 	
